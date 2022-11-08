@@ -31,23 +31,15 @@ module FormattingHelper
           end
 
           status.spoiler_text
-        end
-
-        tag.hr
-      else
-        ''
+        end + tag.hr
       end
     end
 
     after_html = begin
       if status.preloadable_poll
-        tag.p(safe_join("#{status.preloadable_poll.options.map { |o|
-          tag.input(type: status.preloadable_poll.multiple? ? 'checkbox' : 'radio', disabled: true) do
-            o
-          end
-        }, HTML_SAFE_BR)}")
-      else
-        ''
+        tag.p(safe_join(status.preloadable_poll.options.map do |o|
+          tag.send(status.preloadable_poll.multiple? ? 'checkbox' : 'radio', o, disabled: true)
+        end, HTML_SAFE_BR))
       end
     end
 
