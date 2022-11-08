@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 module FormattingHelper
+  HTML_SAFE_BR = '<br />'.html_safe # rubocop:disable Rails/OutputSafety
+
   def html_aware_format(text, local, options = {})
     HtmlAwareFormatter.new(text, local, options).to_s
   end
@@ -23,19 +25,31 @@ module FormattingHelper
 
     before_html = begin
       if status.spoiler_text?
-        "<p><strong>#{I18n.t('rss.content_warning', locale: available_locale_or_nil(status.language) || I18n.default_locale)}</strong> #{h(status.spoiler_text)}</p><hr />"
+        tag.p do
+          tag.strong do
+            I18n.t('rss.content_warning', locale: available_locale_or_nil(status.language) || I18n.default_locale)
+          end
+
+          status.spoiler_text
+        end
+
+        tag.hr
       else
         ''
       end
-    end.html_safe # rubocop:disable Rails/OutputSafety
+    end
 
     after_html = begin
       if status.preloadable_poll
-        "<p>#{status.preloadable_poll.options.map { |o| "<input type=#{status.preloadable_poll.multiple? ? 'checkbox' : 'radio'} disabled /> #{h(o)}" }.join('<br />')}</p>"
+        tag.p(safe_join("#{status.preloadable_poll.options.map { |o|
+          tag.input(type: status.preloadable_poll.multiple? ? 'checkbox' : 'radio', disabled: true) do
+            o
+          end
+        }, HTML_SAFE_BR)}")
       else
         ''
       end
-    end.html_safe # rubocop:disable Rails/OutputSafety
+    end
 
     prerender_custom_emojis(
       safe_join([before_html, html, after_html]),
